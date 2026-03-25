@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Construct Status</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --surface-2: #181818;
+  --border: #1e1e1e;
+  --border-hover: #2a2a2a;
+  --fg: #e8e8e8;
+  --fg-dim: #666666;
+  --fg-muted: #444444;
+  --green: #34C759;
+  --green-dim: rgba(52, 199, 89, 0.12);
+  --green-glow: rgba(52, 199, 89, 0.06);
+  --yellow: #FFD60A;
+  --yellow-dim: rgba(255, 214, 10, 0.12);
+  --red: #FF453A;
+  --red-dim: rgba(255, 69, 58, 0.12);
+  --radius: 10px;
+}
+
+html { background: var(--bg); color: var(--fg); }
+
+body {
+  font-family: 'Rubik', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -20%, var(--green-glow) 0%, transparent 70%),
+    var(--bg);
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ── Header ── */
+header {
+  padding: 60px 0 0;
+  text-align: center;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: #000;
+}
+
+.brand-text {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+/* ── Overall Status Banner ── */
+.status-banner {
+  padding: 28px 32px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: fadeUp 0.5s ease forwards;
+}
+
+.status-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+.status-banner[data-status="operational"]::before {
+  background: linear-gradient(135deg, var(--green), transparent 60%);
+}
+.status-banner[data-status="degraded"]::before {
+  background: linear-gradient(135deg, var(--yellow), transparent 60%);
+}
+.status-banner[data-status="outage"]::before {
+  background: linear-gradient(135deg, var(--red), transparent 60%);
+}
+
+.status-banner-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.status-indicator::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  opacity: 0.3;
+}
+
+.status-indicator.operational {
+  background: var(--green);
+  box-shadow: 0 0 12px var(--green);
+}
+.status-indicator.operational::after {
+  border: 1.5px solid var(--green);
+  animation: pulse-ring 2.5s ease infinite;
+}
+
+.status-indicator.degraded {
+  background: var(--yellow);
+  box-shadow: 0 0 12px var(--yellow);
+}
+.status-indicator.degraded::after {
+  border: 1.5px solid var(--yellow);
+}
+
+.status-indicator.outage {
+  background: var(--red);
+  box-shadow: 0 0 12px var(--red);
+}
+.status-indicator.outage::after {
+  border: 1.5px solid var(--red);
+}
+
+.status-text {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.status-count {
+  margin-left: auto;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--fg-dim);
+}
+
+/* ── Meta row ── */
+.meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 20px;
+  opacity: 0;
+  animation: fadeUp 0.5s ease 0.1s forwards;
+}
+
+.meta-time {
+  font-size: 12px;
+  color: var(--fg-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Rubik', sans-serif;
+  color: var(--fg-dim);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+  color: var(--fg);
+  border-color: var(--border-hover);
+  background: var(--surface);
+}
+
+.refresh-btn:active {
+  transform: scale(0.97);
+}
+
+.refresh-btn.loading .refresh-icon {
+  animation: spin 0.6s linear infinite;
+}
+
+.refresh-icon {
+  width: 13px;
+  height: 13px;
+  transition: transform 0.2s;
+}
+
+/* ── Service List ── */
+.services {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.service-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--surface);
+  transition: background 0.15s;
+  opacity: 0;
+  animation: fadeUp 0.35s ease forwards;
+}
+
+.service-row:hover {
+  background: var(--surface-2);
+}
+
+.service-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.service-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.service-domain {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.service-latency {
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--fg-dim);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.service-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot.operational { background: var(--green); }
+.dot.degraded { background: var(--yellow); }
+.dot.offline { background: var(--red); }
+
+.status-label {
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 80px;
+  text-align: right;
+}
+
+.status-label.operational { color: var(--green); }
+.status-label.degraded { color: var(--yellow); }
+.status-label.offline { color: var(--red); }
+
+/* ── Footer ── */
+footer {
+  text-align: center;
+  padding: 48px 0 40px;
+  font-size: 12px;
+  color: var(--fg-muted);
+  opacity: 0;
+  animation: fadeUp 0.5s ease 0.6s forwards;
+}
+
+footer a {
+  color: var(--fg-dim);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+footer a:hover { color: var(--fg); }
+
+/* ── Loading skeleton ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease infinite;
+  border-radius: 6px;
+}
+
+.skeleton-row {
+  height: 52px;
+  background: var(--surface);
+}
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-ring {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0; transform: scale(1.8); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 540px) {
+  header { padding-top: 40px; }
+  .status-banner { padding: 20px 18px; }
+  .service-row { padding: 14px 16px; gap: 10px; }
+  .service-latency { display: none; }
+  .status-count { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="brand">
+      <div class="brand-mark">C</div>
+      <span class="brand-text">System Status</span>
+    </div>
+  </header>
+
+  <main>
+    <div id="banner" class="status-banner" data-status="operational">
+      <div class="status-banner-inner">
+        <div id="bannerDot" class="status-indicator operational"></div>
+        <span id="bannerText" class="status-text">Checking systems...</span>
+        <span id="bannerCount" class="status-count"></span>
+      </div>
+    </div>
+
+    <div class="meta-row">
+      <span id="lastChecked" class="meta-time"></span>
+      <button id="refreshBtn" class="refresh-btn" onclick="refresh()">
+        <svg class="refresh-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1.5 8a6.5 6.5 0 0 1 11.25-4.5M14.5 8a6.5 6.5 0 0 1-11.25 4.5"/>
+          <path d="M13.5 1v3.5H10M2.5 15v-3.5H6"/>
+        </svg>
+        Refresh
+      </button>
+    </div>
+
+    <div id="serviceList" class="services">
+      <div class="service-row skeleton-row" style="animation-delay:0.15s"></div>
+      <div class="service-row skeleton-row" style="animation-delay:0.2s"></div>
+      <div class="service-row skeleton-row" style="animation-delay:0.25s"></div>
+      <div class="service-row skeleton-row" style="animation-delay:0.3s"></div>
+      <div class="service-row skeleton-row" style="animation-delay:0.35s"></div>
+    </div>
+  </main>
+
+  <footer>
+    <a href="https://construct.space">construct.space</a>
+  </footer>
+</div>
+
+<script>
+let lastFetch = null;
+
+const statusLabels = {
+  operational: 'Operational',
+  degraded: 'Degraded',
+  offline: 'Offline',
+};
+
+const overallLabels = {
+  operational: 'All Systems Operational',
+  degraded: 'Some Systems Degraded',
+  outage: 'Major Outage',
+};
+
+function timeAgo(date) {
+  const s = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (s < 5) return 'just now';
+  if (s < 60) return s + 's ago';
+  return Math.floor(s / 60) + 'm ago';
+}
+
+function updateTimestamp() {
+  const el = document.getElementById('lastChecked');
+  if (lastFetch) el.textContent = 'Checked ' + timeAgo(lastFetch);
+}
+
+function renderServices(data) {
+  const { overall, services, operational, total } = data;
+
+  // Banner
+  const banner = document.getElementById('banner');
+  const dot = document.getElementById('bannerDot');
+  const text = document.getElementById('bannerText');
+  const count = document.getElementById('bannerCount');
+
+  banner.dataset.status = overall;
+  dot.className = 'status-indicator ' + overall;
+  text.textContent = overallLabels[overall] || overall;
+  count.textContent = operational + '/' + total + ' services';
+
+  // Service list
+  const list = document.getElementById('serviceList');
+  list.innerHTML = services.map((s, i) => `
+    <div class="service-row" style="animation-delay:${0.15 + i * 0.04}s">
+      <div class="service-info">
+        <span class="service-name">${esc(s.name)}</span>
+        <span class="service-domain">${esc(s.domain)}</span>
+      </div>
+      <span class="service-latency">${s.latency_ms != null ? s.latency_ms + ' ms' : '—'}</span>
+      <div class="service-status">
+        <span class="status-label ${s.status}">${statusLabels[s.status] || s.status}</span>
+        <span class="dot ${s.status}"></span>
+      </div>
+    </div>
+  `).join('');
+
+  lastFetch = new Date();
+  updateTimestamp();
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+async function fetchStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    renderServices(d);
+  } catch (e) {
+    console.error('Fetch failed:', e);
+  }
+}
+
+async function refresh() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('loading');
+  try {
+    const r = await fetch('/api/refresh', { method: 'POST' });
+    const d = await r.json();
+    renderServices(d);
+  } catch (e) {
+    console.error('Refresh failed:', e);
+  } finally {
+    btn.classList.remove('loading');
+  }
+}
+
+// Init
+fetchStatus();
+setInterval(fetchStatus, 60000);
+setInterval(updateTimestamp, 5000);
+</script>
+</body>
+</html>
