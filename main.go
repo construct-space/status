@@ -37,7 +37,7 @@ var services = []Service{
 	{Name: "Developer", URL: "https://developer.construct.space/api/health", Domain: "developer.construct.space"},
 	{Name: "Domains", URL: "https://domains.construct.space/api/health", Domain: "domains.construct.space"},
 	{Name: "Oracle", URL: "https://oracle.construct.space/api/health", Domain: "oracle.construct.space"},
-	{Name: "PaaS", URL: "https://paas.construct.ninja/api/health", Domain: "paas.construct.ninja"},
+	{Name: "PaaS", URL: "https://paas.construct.ninja/health", Domain: "paas.construct.ninja"},
 	{Name: "Source", URL: "https://source.construct.space/api/health", Domain: "source.construct.space"},
 	{Name: "Website", URL: "https://construct.space/api/health", Domain: "construct.space"},
 }
