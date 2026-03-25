@@ -179,16 +179,20 @@ func main() {
 		writeJSON(w, 200, map[string]any{"status": "ok"})
 	})
 
-	// Serve frontend
+	// Serve frontend (SPA fallback)
 	webContent, _ := fs.Sub(webFS, "web")
 	fileServer := http.FileServer(http.FS(webContent))
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		// Try static file first
 		if r.URL.Path != "/" {
-			// Try serving static file first
-			fileServer.ServeHTTP(w, r)
-			return
+			f, err := fs.Stat(webContent, r.URL.Path[1:])
+			if err == nil && !f.IsDir() {
+				fileServer.ServeHTTP(w, r)
+				return
+			}
 		}
-		// Serve index.html for root
+		// SPA fallback: serve index.html
+		r.URL.Path = "/"
 		fileServer.ServeHTTP(w, r)
 	})
 
