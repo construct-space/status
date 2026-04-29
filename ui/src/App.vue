@@ -106,9 +106,22 @@ onUnmounted(() => {
       <!-- Header -->
       <header class="status-header">
         <div class="brand">
-          <div class="brand-mark">C</div>
-          <span class="brand-text">System Status</span>
+          <svg
+            class="brand-logo"
+            viewBox="0 0 533 533"
+            width="28"
+            height="28"
+            fill="currentColor"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M266.5 410.156C230.912 410.156 199.106 402.203 171.081 386.297C143.056 370.39 121.036 348.519 105.022 320.684C89.0072 292.848 81 261.256 81 225.909C81 190.12 89.0072 158.308 105.022 130.472C121.036 102.636 143.056 80.7655 171.081 64.8593C199.106 48.9531 230.912 41 266.5 41C302.087 41 333.671 48.9531 361.252 64.8593C389.277 80.7655 411.297 102.636 427.311 130.472C443.326 158.308 451.555 190.12 452 225.909C452 261.256 443.77 292.848 427.311 320.684C411.297 348.519 389.277 370.39 361.252 386.297C333.671 402.203 302.087 410.156 266.5 410.156ZM266.5 363.763C292.301 363.763 315.433 357.798 335.896 345.868C356.359 333.939 372.373 317.591 383.939 296.824C395.505 276.058 401.288 252.42 401.288 225.909C401.288 199.399 395.505 175.761 383.939 154.994C372.373 133.786 356.359 117.217 335.896 105.287C315.433 93.3579 292.301 87.393 266.5 87.393C240.699 87.393 217.567 93.3579 197.104 105.287C176.641 117.217 160.405 133.786 148.394 154.994C136.828 175.761 131.045 199.399 131.045 225.909C131.045 252.42 136.828 276.058 148.394 296.824C160.405 317.591 176.641 333.939 197.104 345.868C217.567 357.798 240.699 363.763 266.5 363.763Z"/>
+            <path d="M378.22 451.578C393.077 451.578 405.121 460.85 405.121 472.289C405.121 483.727 393.077 493 378.22 493H160.945C146.089 493 134.044 483.727 134.044 472.289C134.044 460.85 146.089 451.578 160.945 451.578H378.22Z"/>
+          </svg>
+          <span class="brand-wordmark">Construct</span>
         </div>
+        <h1 class="page-title">System Status</h1>
+        <p class="page-sub">Live health of every public service.</p>
       </header>
 
       <!-- Overall banner -->
@@ -137,7 +150,7 @@ onUnmounted(() => {
       <div class="service-list">
         <!-- Loading skeletons -->
         <template v-if="loading">
-          <div v-for="i in 9" :key="i" class="service-row">
+          <div v-for="i in 6" :key="i" class="service-row">
             <CSkeleton width="120px" height="14px" />
             <CSkeleton width="60px" height="12px" />
             <CSkeleton width="80px" height="12px" />
@@ -170,6 +183,8 @@ onUnmounted(() => {
       <!-- Footer -->
       <footer class="status-footer">
         <a href="https://construct.space">construct.space</a>
+        <span class="footer-sep">·</span>
+        <a href="https://my.construct.space">my.construct.space</a>
       </footer>
     </div>
 
@@ -181,13 +196,13 @@ onUnmounted(() => {
 :root {
   --app-background: #0a0a0a;
   --app-foreground: #e8e8e8;
-  --app-muted: #666;
+  --app-muted: #888;
+  --app-subtle: #555;
   --app-accent: #34C759;
   --app-accent-hover: #2db84e;
   --app-border: #1e1e1e;
   --app-card-bg: #111111;
-  --app-card-hover: #181818;
-  --app-input-bg: #111111;
+  --app-card-hover: #161616;
   --app-canvas-bg: #0a0a0a;
 }
 
@@ -195,8 +210,8 @@ onUnmounted(() => {
 
 body {
   font-family: 'Rubik', ui-sans-serif, system-ui, sans-serif;
-  background: #0a0a0a;
-  color: #e8e8e8;
+  background: var(--app-canvas-bg);
+  color: var(--app-foreground);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
@@ -204,13 +219,11 @@ body {
 #app {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 80% 60% at 50% -20%, rgba(52, 199, 89, 0.05) 0%, transparent 70%),
-    #0a0a0a;
+    radial-gradient(ellipse 80% 60% at 50% -20%, rgba(52, 199, 89, 0.06) 0%, transparent 70%),
+    var(--app-canvas-bg);
 }
 
-.status-page {
-  min-height: 100vh;
-}
+.status-page { min-height: 100vh; }
 
 .status-container {
   max-width: 720px;
@@ -220,7 +233,7 @@ body {
 
 /* Header */
 .status-header {
-  padding: 60px 0 32px;
+  padding: 72px 0 36px;
   text-align: center;
 }
 
@@ -228,35 +241,39 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  margin-bottom: 28px;
 }
 
-.brand-mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  background: #34C759;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
-  color: #000;
+.brand-logo {
+  color: var(--app-accent);
+  display: inline-block;
 }
 
-.brand-text {
+.brand-wordmark {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--app-foreground);
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.page-sub {
   font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #666;
+  color: var(--app-muted);
 }
 
 /* Banner */
 .banner {
-  padding: 28px 32px;
-  border-radius: 14px;
-  border: 1px solid #1e1e1e;
-  background: #111;
+  padding: 24px 28px;
+  border-radius: 12px;
+  border: 1px solid var(--app-border);
+  background: var(--app-card-bg);
   position: relative;
   overflow: hidden;
   animation: fadeUp 0.5s ease forwards;
@@ -266,9 +283,9 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   background: linear-gradient(135deg, var(--accent, #34C759), transparent 60%);
-  opacity: 0.04;
+  opacity: 0.05;
   pointer-events: none;
 }
 
@@ -284,7 +301,6 @@ body {
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
-  position: relative;
 }
 
 .banner-dot.operational {
@@ -299,8 +315,8 @@ body {
 .banner-count {
   margin-left: auto;
   font-size: 12px;
-  font-family: 'JetBrains Mono', monospace;
-  color: #666;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  color: var(--app-muted);
 }
 
 /* Meta row */
@@ -308,13 +324,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 0 20px;
+  padding: 16px 4px 18px;
 }
 
 .meta-time {
   font-size: 12px;
-  color: #444;
-  font-family: 'JetBrains Mono', monospace;
+  color: var(--app-subtle);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 /* Service list */
@@ -322,10 +338,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  background: #1e1e1e;
-  border-radius: 10px;
+  background: var(--app-border);
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #1e1e1e;
+  border: 1px solid var(--app-border);
 }
 
 .service-row {
@@ -334,13 +350,13 @@ body {
   align-items: center;
   gap: 16px;
   padding: 16px 20px;
-  background: #111;
+  background: var(--app-card-bg);
   transition: background 0.15s;
   animation: fadeUp 0.35s ease both;
 }
 
 .service-row:hover {
-  background: #181818;
+  background: var(--app-card-hover);
 }
 
 .svc-info {
@@ -357,8 +373,8 @@ body {
 
 .svc-domain {
   font-size: 11px;
-  font-family: 'JetBrains Mono', monospace;
-  color: #444;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  color: var(--app-subtle);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -366,8 +382,8 @@ body {
 
 .svc-latency {
   font-size: 12px;
-  font-family: 'JetBrains Mono', monospace;
-  color: #666;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  color: var(--app-muted);
   text-align: right;
   white-space: nowrap;
 }
@@ -394,19 +410,24 @@ body {
 
 /* Footer */
 .status-footer {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   padding: 48px 0 40px;
   font-size: 12px;
-  color: #444;
+  color: var(--app-subtle);
 }
 
+.footer-sep { color: var(--app-border); }
+
 .status-footer a {
-  color: #666;
+  color: var(--app-muted);
   text-decoration: none;
   transition: color 0.15s;
 }
 
-.status-footer a:hover { color: #e8e8e8; }
+.status-footer a:hover { color: var(--app-foreground); }
 
 /* Animations */
 @keyframes fadeUp {
@@ -421,7 +442,8 @@ body {
 
 /* Responsive */
 @media (max-width: 540px) {
-  .status-header { padding-top: 40px; }
+  .status-header { padding-top: 48px; }
+  .page-title { font-size: 24px; }
   .banner { padding: 20px 18px; }
   .service-row { padding: 14px 16px; gap: 10px; }
   .svc-latency { display: none; }
