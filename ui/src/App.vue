@@ -1,8 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { CButton, CSkeleton, CToast, useToast } from '@construct-space/ui'
-
-const { add: addToast } = useToast()
+import { themes, loadSavedTheme, saveTheme } from './themes'
 
 const services = ref([])
 const overall = ref('loading')
@@ -13,6 +11,9 @@ const loading = ref(true)
 const refreshing = ref(false)
 const secondsAgo = ref(0)
 
+const currentTheme = ref(loadSavedTheme())
+const showThemePicker = ref(false)
+
 let pollTimer = null
 let tickTimer = null
 
@@ -21,18 +22,18 @@ const overallLabel = computed(() => {
     operational: 'All Systems Operational',
     degraded: 'Some Systems Degraded',
     outage: 'Major Outage',
-    loading: 'Checking systems...'
+    loading: 'Checking systems…'
   }
   return labels[overall.value] || overall.value
 })
 
 const overallColor = computed(() => {
-  const colors = { operational: '#34C759', degraded: '#FFD60A', outage: '#FF453A', loading: '#666' }
-  return colors[overall.value] || '#666'
+  const colors = { operational: '#34C759', degraded: '#FFD60A', outage: '#FF453A', loading: 'var(--app-muted)' }
+  return colors[overall.value] || 'var(--app-muted)'
 })
 
 function statusColor(status) {
-  return { operational: '#34C759', degraded: '#FFD60A', offline: '#FF453A' }[status] || '#666'
+  return { operational: '#34C759', degraded: '#FFD60A', offline: '#FF453A' }[status] || 'var(--app-muted)'
 }
 
 function statusLabel(status) {
@@ -61,26 +62,30 @@ async function fetchStatus() {
   try {
     const r = await fetch('/api/status')
     if (!r.ok) throw new Error(`HTTP ${r.status}`)
-    const d = await r.json()
-    applyData(d)
+    applyData(await r.json())
   } catch (e) {
     console.error('Fetch failed:', e)
   }
 }
 
 async function refresh() {
+  if (refreshing.value) return
   refreshing.value = true
   try {
     const r = await fetch('/api/refresh', { method: 'POST' })
     if (!r.ok) throw new Error(`HTTP ${r.status}`)
-    const d = await r.json()
-    applyData(d)
-    addToast({ title: 'Status refreshed', color: 'success', duration: 2000 })
+    applyData(await r.json())
   } catch (e) {
-    addToast({ title: 'Refresh failed', description: e.message, color: 'error' })
+    console.error('Refresh failed:', e)
   } finally {
     refreshing.value = false
   }
+}
+
+function selectTheme(theme) {
+  currentTheme.value = theme
+  saveTheme(theme)
+  showThemePicker.value = false
 }
 
 onMounted(() => {
@@ -135,49 +140,48 @@ onUnmounted(() => {
 
       <!-- Meta row -->
       <div class="meta-row">
-        <span class="meta-time">{{ checkedAt ? `Checked ${timeAgoText()}` : '' }}</span>
-        <CButton
-          label="Refresh"
-          icon="i-lucide-refresh-cw"
-          variant="ghost"
-          size="xs"
-          :loading="refreshing"
-          @click="refresh"
-        />
+        <span class="meta-time">
+          <template v-if="loading">Checking…</template>
+          <template v-else-if="checkedAt">Checked {{ timeAgoText() }}</template>
+        </span>
+        <button class="refresh-btn" :disabled="refreshing" @click="refresh">
+          <svg
+            class="refresh-icon"
+            :class="{ spinning: refreshing }"
+            width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+            <path d="M21 3v5h-5"/>
+            <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+            <path d="M3 21v-5h5"/>
+          </svg>
+          <span>Refresh</span>
+        </button>
       </div>
 
       <!-- Service list -->
-      <div class="service-list">
-        <!-- Loading skeletons -->
-        <template v-if="loading">
-          <div v-for="i in 6" :key="i" class="service-row">
-            <CSkeleton width="120px" height="14px" />
-            <CSkeleton width="60px" height="12px" />
-            <CSkeleton width="80px" height="12px" />
+      <div v-if="!loading" class="service-list">
+        <div
+          v-for="(svc, i) in services"
+          :key="svc.name"
+          class="service-row"
+          :style="{ animationDelay: `${i * 0.04}s` }"
+        >
+          <div class="svc-info">
+            <span class="svc-name">{{ svc.name }}</span>
+            <span class="svc-domain">{{ svc.domain }}</span>
           </div>
-        </template>
-
-        <!-- Services -->
-        <template v-else>
-          <div
-            v-for="(svc, i) in services"
-            :key="svc.name"
-            class="service-row"
-            :style="{ animationDelay: `${i * 0.04}s` }"
-          >
-            <div class="svc-info">
-              <span class="svc-name">{{ svc.name }}</span>
-              <span class="svc-domain">{{ svc.domain }}</span>
-            </div>
-            <span class="svc-latency">{{ svc.latency_ms != null ? `${svc.latency_ms} ms` : '—' }}</span>
-            <div class="svc-status">
-              <span class="svc-status-label" :style="{ color: statusColor(svc.status) }">
-                {{ statusLabel(svc.status) }}
-              </span>
-              <span class="svc-dot" :style="{ background: statusColor(svc.status) }"></span>
-            </div>
+          <span class="svc-latency">{{ svc.latency_ms != null ? `${svc.latency_ms} ms` : '—' }}</span>
+          <div class="svc-status">
+            <span class="svc-status-label" :style="{ color: statusColor(svc.status) }">
+              {{ statusLabel(svc.status) }}
+            </span>
+            <span class="svc-dot" :style="{ background: statusColor(svc.status) }"></span>
           </div>
-        </template>
+        </div>
       </div>
 
       <!-- Footer -->
@@ -188,30 +192,35 @@ onUnmounted(() => {
       </footer>
     </div>
 
-    <CToast />
+    <!-- Theme picker -->
+    <div class="theme-anchor">
+      <button class="theme-toggle" @click="showThemePicker = !showThemePicker" :title="`Theme: ${currentTheme.name}`">
+        <span class="theme-toggle-dot" :style="{ background: currentTheme.accent }"></span>
+      </button>
+      <div v-if="showThemePicker" class="theme-picker">
+        <button
+          v-for="t in themes"
+          :key="t.id"
+          class="theme-dot"
+          :class="{ active: t.id === currentTheme.id }"
+          :style="{ background: t.bg }"
+          :title="t.name"
+          @click="selectTheme(t)"
+        >
+          <span class="theme-dot-accent" :style="{ background: t.accent }"></span>
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <style>
-:root {
-  --app-background: #0a0a0a;
-  --app-foreground: #e8e8e8;
-  --app-muted: #888;
-  --app-subtle: #555;
-  --app-accent: #34C759;
-  --app-accent-hover: #2db84e;
-  --app-border: #1e1e1e;
-  --app-card-bg: #111111;
-  --app-card-hover: #161616;
-  --app-canvas-bg: #0a0a0a;
-}
-
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
   font-family: 'Rubik', ui-sans-serif, system-ui, sans-serif;
-  background: var(--app-canvas-bg);
-  color: var(--app-foreground);
+  background: var(--app-canvas-bg, #1a1a2e);
+  color: var(--app-foreground, #e5e5e5);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
@@ -219,11 +228,11 @@ body {
 #app {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 80% 60% at 50% -20%, rgba(52, 199, 89, 0.06) 0%, transparent 70%),
-    var(--app-canvas-bg);
+    radial-gradient(ellipse 80% 60% at 50% -20%, color-mix(in srgb, var(--app-accent) 7%, transparent) 0%, transparent 70%),
+    var(--app-canvas-bg, #1a1a2e);
 }
 
-.status-page { min-height: 100vh; }
+.status-page { min-height: 100vh; position: relative; }
 
 .status-container {
   max-width: 720px;
@@ -261,6 +270,7 @@ body {
   font-weight: 600;
   letter-spacing: -0.02em;
   margin-bottom: 8px;
+  color: var(--app-foreground);
 }
 
 .page-sub {
@@ -284,8 +294,8 @@ body {
   position: absolute;
   inset: 0;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--accent, #34C759), transparent 60%);
-  opacity: 0.05;
+  background: linear-gradient(135deg, var(--accent, var(--app-accent)), transparent 60%);
+  opacity: 0.06;
   pointer-events: none;
 }
 
@@ -303,13 +313,12 @@ body {
   flex-shrink: 0;
 }
 
-.banner-dot.operational {
-  animation: pulse 2.5s ease infinite;
-}
+.banner-dot.operational { animation: pulse 2.5s ease infinite; }
 
 .banner-label {
   font-size: 16px;
   font-weight: 500;
+  color: var(--app-foreground);
 }
 
 .banner-count {
@@ -329,9 +338,36 @@ body {
 
 .meta-time {
   font-size: 12px;
-  color: var(--app-subtle);
+  color: var(--app-muted);
   font-family: 'JetBrains Mono', ui-monospace, monospace;
+  opacity: 0.7;
 }
+
+.refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--app-border);
+  border-radius: 6px;
+  color: var(--app-muted);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: var(--app-card-hover);
+  color: var(--app-foreground);
+  border-color: var(--app-muted);
+}
+
+.refresh-btn:disabled { cursor: default; opacity: 0.6; }
+
+.refresh-icon { color: currentColor; }
+.refresh-icon.spinning { animation: spin 0.8s linear infinite; }
 
 /* Service list */
 .service-list {
@@ -355,9 +391,7 @@ body {
   animation: fadeUp 0.35s ease both;
 }
 
-.service-row:hover {
-  background: var(--app-card-hover);
-}
+.service-row:hover { background: var(--app-card-hover); }
 
 .svc-info {
   display: flex;
@@ -369,12 +403,14 @@ body {
 .svc-name {
   font-size: 14px;
   font-weight: 500;
+  color: var(--app-foreground);
 }
 
 .svc-domain {
   font-size: 11px;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  color: var(--app-subtle);
+  color: var(--app-muted);
+  opacity: 0.7;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -388,11 +424,7 @@ body {
   white-space: nowrap;
 }
 
-.svc-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.svc-status { display: flex; align-items: center; gap: 8px; }
 
 .svc-status-label {
   font-size: 12px;
@@ -416,7 +448,7 @@ body {
   gap: 10px;
   padding: 48px 0 40px;
   font-size: 12px;
-  color: var(--app-subtle);
+  color: var(--app-muted);
 }
 
 .footer-sep { color: var(--app-border); }
@@ -429,6 +461,67 @@ body {
 
 .status-footer a:hover { color: var(--app-foreground); }
 
+/* Theme picker */
+.theme-anchor {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  z-index: 50;
+}
+
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--app-card-bg);
+  border: 1px solid var(--app-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.theme-toggle:hover { background: var(--app-card-hover); transform: translateY(-1px); }
+
+.theme-toggle-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.theme-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 10px;
+  background: var(--app-card-bg);
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.theme-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--app-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s;
+}
+
+.theme-dot:hover { transform: scale(1.08); }
+.theme-dot.active { outline: 2px solid var(--app-accent); outline-offset: 1px; }
+.theme-dot-accent { width: 8px; height: 8px; border-radius: 50%; }
+
 /* Animations */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
@@ -440,6 +533,10 @@ body {
   50% { opacity: 0.5; }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Responsive */
 @media (max-width: 540px) {
   .status-header { padding-top: 48px; }
@@ -448,5 +545,6 @@ body {
   .service-row { padding: 14px 16px; gap: 10px; }
   .svc-latency { display: none; }
   .banner-count { display: none; }
+  .theme-anchor { bottom: 16px; right: 16px; }
 }
 </style>

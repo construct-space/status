@@ -3,3 +3,5 @@ construct-status
 ui/node_modules/
 ui/dist/
 ui/bun.lock
+web/
+
