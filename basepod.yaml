@@ -1,8 +1,0 @@
-name: status
-server: status.construct.space
-port: 80
-build:
-    dockerfile: Dockerfile
-    context: .
-env:
-    PORT: "80"
