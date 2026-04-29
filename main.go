@@ -30,15 +30,22 @@ type ServiceStatus struct {
 	CheckedAt string `json:"checked_at"`
 }
 
+// Public probes only. Accounts / Developer / Source / Marketplace / Storage
+// are now reachable solely through the my.construct.space gateway —
+// monitoring `My` covers the user-visible health of that whole bucket
+// (a 5xx from any of them surfaces as a gateway failure on `My`). We
+// keep direct probes for the services that still serve their own public
+// domains: standalone web (Blog, Website, Construct.delivery), admin
+// surfaces (Oracle, Domains), the runtime data plane (Graph), and the
+// telemetry ingestion endpoint.
 var services = []Service{
-	{Name: "Accounts", URL: "https://accounts.construct.space/api/health", Domain: "accounts.construct.space"},
 	{Name: "Blog", URL: "https://construct.blog/ghost/api/admin/site/", Domain: "construct.blog"},
 	{Name: "Delivery", URL: "https://construct.delivery/health", Domain: "construct.delivery"},
-	{Name: "Developer", URL: "https://developer.construct.space/api/health", Domain: "developer.construct.space"},
 	{Name: "Domains", URL: "https://domains.construct.space/api/health", Domain: "domains.construct.space"},
+	{Name: "Graph", URL: "https://graph.construct.space/health", Domain: "graph.construct.space"},
+	{Name: "My", URL: "https://my.construct.space/api/health", Domain: "my.construct.space"},
 	{Name: "Oracle", URL: "https://oracle.construct.space/api/health", Domain: "oracle.construct.space"},
-	{Name: "PaaS", URL: "https://paas.construct.ninja/health", Domain: "paas.construct.ninja"},
-	{Name: "Source", URL: "https://source.construct.space/api/health", Domain: "source.construct.space"},
+	{Name: "Telemetry", URL: "https://telemetry-api.construct.space/api/health", Domain: "telemetry-api.construct.space"},
 	{Name: "Website", URL: "https://construct.space/api/health", Domain: "construct.space"},
 }
 
