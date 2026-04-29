@@ -124,6 +124,35 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	json.NewEncoder(w).Encode(v)
 }
 
+func snapshot() map[string]any {
+	cacheMu.RLock()
+	statuses := cachedStatuses
+	checked := cacheTime
+	cacheMu.RUnlock()
+
+	operational := 0
+	for _, s := range statuses {
+		if s.Status == "operational" {
+			operational++
+		}
+	}
+
+	overall := "operational"
+	if operational < len(statuses) && operational > 0 {
+		overall = "degraded"
+	} else if operational == 0 {
+		overall = "outage"
+	}
+
+	return map[string]any{
+		"overall":     overall,
+		"services":    statuses,
+		"checked_at":  checked.UTC().Format(time.RFC3339),
+		"total":       len(statuses),
+		"operational": operational,
+	}
+}
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -136,41 +165,13 @@ func main() {
 
 	// API: get all service statuses
 	mux.HandleFunc("GET /api/status", func(w http.ResponseWriter, r *http.Request) {
-		cacheMu.RLock()
-		statuses := cachedStatuses
-		checked := cacheTime
-		cacheMu.RUnlock()
-
-		operational := 0
-		for _, s := range statuses {
-			if s.Status == "operational" {
-				operational++
-			}
-		}
-
-		overall := "operational"
-		if operational < len(statuses) && operational > 0 {
-			overall = "degraded"
-		} else if operational == 0 {
-			overall = "outage"
-		}
-
-		writeJSON(w, 200, map[string]any{
-			"overall":    overall,
-			"services":   statuses,
-			"checked_at": checked.UTC().Format(time.RFC3339),
-			"total":      len(statuses),
-			"operational": operational,
-		})
+		writeJSON(w, 200, snapshot())
 	})
 
 	// API: force refresh
 	mux.HandleFunc("POST /api/refresh", func(w http.ResponseWriter, r *http.Request) {
 		updateCache()
-		cacheMu.RLock()
-		statuses := cachedStatuses
-		cacheMu.RUnlock()
-		writeJSON(w, 200, map[string]any{"services": statuses, "refreshed": true})
+		writeJSON(w, 200, snapshot())
 	})
 
 	// Health check
