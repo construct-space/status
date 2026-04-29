@@ -30,20 +30,17 @@ type ServiceStatus struct {
 	CheckedAt string `json:"checked_at"`
 }
 
-// Public probes only. Accounts / Developer / Source / Marketplace / Storage
-// are now reachable solely through the my.construct.space gateway —
-// monitoring `My` covers the user-visible health of that whole bucket
-// (a 5xx from any of them surfaces as a gateway failure on `My`). We
-// keep direct probes for the services that still serve their own public
-// domains: standalone web (Blog, Website, Construct.delivery), admin
-// surfaces (Oracle, Domains), and the runtime data plane (Graph).
+// User-facing public services only. Internal tools (oracle, telemetry,
+// admin surfaces) are not surfaced on the public status page; their
+// health is monitored separately by ops. Backend services like accounts,
+// developer, source, marketplace, storage roll up under the My probe
+// since they're only reachable through the my.construct.space gateway.
 var services = []Service{
 	{Name: "Blog", URL: "https://construct.blog/ghost/api/admin/site/", Domain: "construct.blog"},
 	{Name: "Delivery", URL: "https://construct.delivery/health", Domain: "construct.delivery"},
 	{Name: "Domains", URL: "https://domains.construct.space/api/health", Domain: "domains.construct.space"},
 	{Name: "Graph", URL: "https://graph.construct.space/health", Domain: "graph.construct.space"},
 	{Name: "My", URL: "https://my.construct.space/api/health", Domain: "my.construct.space"},
-	{Name: "Oracle", URL: "https://oracle.construct.space/api/health", Domain: "oracle.construct.space"},
 	{Name: "Website", URL: "https://construct.space/api/health", Domain: "construct.space"},
 }
 
