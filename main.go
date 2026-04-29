@@ -36,8 +36,7 @@ type ServiceStatus struct {
 // (a 5xx from any of them surfaces as a gateway failure on `My`). We
 // keep direct probes for the services that still serve their own public
 // domains: standalone web (Blog, Website, Construct.delivery), admin
-// surfaces (Oracle, Domains), the runtime data plane (Graph), and the
-// telemetry ingestion endpoint.
+// surfaces (Oracle, Domains), and the runtime data plane (Graph).
 var services = []Service{
 	{Name: "Blog", URL: "https://construct.blog/ghost/api/admin/site/", Domain: "construct.blog"},
 	{Name: "Delivery", URL: "https://construct.delivery/health", Domain: "construct.delivery"},
@@ -45,7 +44,6 @@ var services = []Service{
 	{Name: "Graph", URL: "https://graph.construct.space/health", Domain: "graph.construct.space"},
 	{Name: "My", URL: "https://my.construct.space/api/health", Domain: "my.construct.space"},
 	{Name: "Oracle", URL: "https://oracle.construct.space/api/health", Domain: "oracle.construct.space"},
-	{Name: "Telemetry", URL: "https://telemetry-api.construct.space/api/health", Domain: "telemetry-api.construct.space"},
 	{Name: "Website", URL: "https://construct.space/api/health", Domain: "construct.space"},
 }
 
