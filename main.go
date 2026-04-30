@@ -170,6 +170,11 @@ func main() {
 
 	// API: force refresh
 	mux.HandleFunc("POST /api/refresh", func(w http.ResponseWriter, r *http.Request) {
+		secret := os.Getenv("STATUS_REFRESH_SECRET")
+		if secret == "" || r.Header.Get("X-Internal-Secret") != secret {
+			http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+			return
+		}
 		updateCache()
 		writeJSON(w, 200, snapshot())
 	})
@@ -200,5 +205,13 @@ func main() {
 	})
 
 	log.Printf("[status] Listening on :%s", port)
-	log.Fatal(http.ListenAndServe(":"+port, mux))
+	server := &http.Server{
+		Addr:              ":" + port,
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		IdleTimeout:       120 * time.Second,
+	}
+	log.Fatal(server.ListenAndServe())
 }

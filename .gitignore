@@ -1,7 +1,9 @@
 construct-status
 .DS_Store
+.env
+.env.*
+!.env.sample
 ui/node_modules/
 ui/dist/
 ui/bun.lock
 web/
-
